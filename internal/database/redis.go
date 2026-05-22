@@ -3,34 +3,24 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
-	"os"
-
 	"github.com/redis/go-redis/v9"
 )
 
+// This is the global variable our signup.go file is trying to use!
 var RedisClient *redis.Client
-var Ctx = context.Background()
 
-// ConnectRedis initializes the Redis key-value memory store
-func ConnectRedis() error {
-	addr := fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
-	if os.Getenv("REDIS_HOST") == "" || os.Getenv("REDIS_PORT") == "" {
-		return fmt.Errorf("CRITICAL: Missing Redis environment variables in .env")
-	}
-
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: "", // Default alpine redis image has no password set
-		DB:       0,  // Use default DB 0
+func InitRedis() {
+	RedisClient = redis.NewClient(&redis.Options{
+		Addr:     "redis:6379", // Points to the Docker container named "redis"
+		Password: "",           // No password by default
+		DB:       0,            // Default DB
 	})
 
-	// Ping Redis to verify connection works
-	if err := rdb.Ping(Ctx).Err(); err != nil {
-		return fmt.Errorf("failed to connect to Redis: %w", err)
+	// Send a quick "Ping" to see if Redis is actually awake
+	_, err := RedisClient.Ping(context.Background()).Result()
+	if err != nil {
+		fmt.Println("❌ REDIS ERROR: Failed to connect to Redis container!", err)
+	} else {
+		fmt.Println("✅ REDIS CONNECTED: Ready to store OTPs!")
 	}
-
-	RedisClient = rdb
-	log.Println("✅ Redis cache engine connected successfully!")
-	return nil
 }
