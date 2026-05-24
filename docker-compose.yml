@@ -1,0 +1,34 @@
+services:
+  # 1. Your Golang API
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres
+      - redis
+
+  # 2. PostgreSQL Database (For your Users)
+# 2. PostgreSQL Database (For your Users)
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER}         # <--- Pulls from .env
+      POSTGRES_PASSWORD: ${DB_PASSWORD} # <--- Pulls from .env
+      POSTGRES_DB: ${DB_NAME}           # <--- Pulls from .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # 3. Redis (For your OTPs!)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+# This saves your database data so it doesn't wipe out when you restart
+volumes:
+  pgdata:
