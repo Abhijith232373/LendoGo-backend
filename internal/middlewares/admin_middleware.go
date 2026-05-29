@@ -1,6 +1,8 @@
 package middlewares
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -9,6 +11,7 @@ func AdminOnly() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// 1. Grab the role that the Protected() middleware saved
 		role := c.Locals("role")
+		fmt.Printf("\n[DEBUG] Token Role is: '%v'\n", role)
 
 		// 2. If the role is missing or NOT 'admin', kick them out!
 		if role != "admin" {

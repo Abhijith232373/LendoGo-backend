@@ -39,6 +39,7 @@ type UserRes struct {
     FullName string `json:"full_name"`
     Email    string `json:"email"`
     Role     string `json:"role"` 
+    Status    string    `json:"status"`
 }
 
 type AuthRes struct {

@@ -13,6 +13,7 @@ type User struct {
     Email     string         `json:"email" gorm:"unique"`
     Password  string         `json:"password"`
     Role      string         `gorm:"type:varchar(20);default:'user'"`
+	Status string `gorm:"type:varchar(20);default:'Active'" json:"status"`
     CreatedAt time.Time
     UpdatedAt time.Time
     DeletedAt gorm.DeletedAt `gorm:"index"`

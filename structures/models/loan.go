@@ -8,38 +8,40 @@ import (
 )
 
 // 1. Core Application (Contains all the basic text data and loan terms)
+// 1. Core Application (Contains all the basic text data and loan terms)
 type LoanApplication struct {
-	ID              uuid.UUID `gorm:"type:uuid;primaryKey"`
-	UserID          uuid.UUID `gorm:"type:uuid;not null"`
-	ReferenceNumber string    `gorm:"type:varchar(20);uniqueIndex"`
+    ID              uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+    UserID          uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
+    ReferenceNumber string    `gorm:"type:varchar(20);uniqueIndex" json:"reference_number"`
 
-	// Applicant Details
-	FullName     string `gorm:"type:varchar(100)"`
-	DOB          string `gorm:"type:varchar(20)"`
-	Email        string `gorm:"type:varchar(100)"`
-	MobileNumber string `gorm:"type:varchar(20)"`
-	Address      string
-	City         string
-	State        string
-	Pincode      string `gorm:"type:varchar(20)"`
+    // Applicant Details
+    FullName     string `gorm:"type:varchar(100)" json:"full_name"`
+    DOB          string `gorm:"type:varchar(20)" json:"dob"`
+    Email        string `gorm:"type:varchar(100)" json:"email"`
+    MobileNumber string `gorm:"type:varchar(20)" json:"mobile_number"`
+    Address      string `json:"address"`
+    City         string `json:"city"`
+    State        string `json:"state"`
+    Pincode      string `gorm:"type:varchar(20)" json:"pincode"`
 
-	// Loan Configuration
-	LoanTrack       string  `gorm:"type:varchar(50)"`
-	ProductCategory string  `gorm:"type:varchar(50)"`
-	PrincipalAmount float64 `gorm:"not null"`
-	TenureMonths    int     `gorm:"not null"`
-	InterestRate    float64
-	EstimatedEMI    float64
+    // Loan Configuration
+    LoanTrack       string  `gorm:"type:varchar(50)" json:"loan_track"`
+    ProductCategory string  `gorm:"type:varchar(50)" json:"product_category"`
+    PrincipalAmount float64 `gorm:"not null" json:"principal_amount"`
+    TenureMonths    int     `gorm:"not null" json:"tenure_months"`
+    InterestRate    float64 `json:"interest_rate"`
+    EstimatedEMI    float64 `json:"estimated_emi"`
 
-	ApplicationStatus string `gorm:"type:varchar(20);default:'UNDER_REVIEW'"`
+    // 👇 Mapped to "status" so React can read it easily!
+    ApplicationStatus string `gorm:"type:varchar(20);default:'UNDER_REVIEW'" json:"status"`
 
-	// 👇 GORM MAGIC: These fields tell GORM to link the other two tables! 👇
-	KYC           KYCDocuments     `gorm:"foreignKey:LoanID;constraint:OnDelete:CASCADE;" json:"kyc_documents"`
-	FinancialDocs FinancialDetails `gorm:"foreignKey:LoanID;constraint:OnDelete:CASCADE;" json:"financial_details"`
+    // 👇 GORM MAGIC: These fields tell GORM to link the other two tables! 👇
+    KYC           KYCDocuments     `gorm:"foreignKey:LoanID;constraint:OnDelete:CASCADE;" json:"kyc_documents"`
+    FinancialDocs FinancialDetails `gorm:"foreignKey:LoanID;constraint:OnDelete:CASCADE;" json:"financial_details"`
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+    CreatedAt time.Time      `json:"created_at"`
+    UpdatedAt time.Time      `json:"updated_at"`
+    DeletedAt gorm.DeletedAt `gorm:"index" json:"-"` // Hidden from frontend
 }
 
 // 2. KYC Table (Strictly Identity & Security)

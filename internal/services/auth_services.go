@@ -82,6 +82,7 @@ func (s *authServiceImpl) Login(req dto.LoginReq) (*dto.AuthRes, error) {
             FullName: user.FullName,
             Email:    user.Email,
             Role:     user.Role, 
+			Status:   user.Status,
         },
     }
 
