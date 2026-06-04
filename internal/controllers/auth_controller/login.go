@@ -25,6 +25,11 @@ func (c *AuthController) Login(ctx *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+	if res.User.Status == "Blocked" {
+        return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{
+            "error": "Your account has been suspended by an administrator.",
+        })
+    }
 
 	// 👇 Step 3: Create the HTTP-Only Cookie 👇
 	cookie := new(fiber.Cookie)

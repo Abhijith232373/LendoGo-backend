@@ -1,56 +1,92 @@
 package utils
 
 import (
-	"context"
-	"fmt"
-	"mime/multipart"
-	"os"
-	"path/filepath"
+    "context"
+    "fmt"
+    "mime/multipart"
+    "os"
+    "path/filepath"
+    "strings"
+    "time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/google/uuid"
+    "github.com/aws/aws-sdk-go-v2/aws"
+    "github.com/aws/aws-sdk-go-v2/config"
+    "github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+    "github.com/aws/aws-sdk-go-v2/service/s3"
+    "github.com/google/uuid"
 )
 
 // UploadFileToS3 securely sends a file from Fiber to your AWS bucket using AWS SDK V2
 func UploadFileToS3(fileHeader *multipart.FileHeader) (string, error) {
-	// 1. Open the file sent from React
-	file, err := fileHeader.Open()
-	if err != nil {
-		return "", fmt.Errorf("failed to open file: %v", err)
-	}
-	defer file.Close()
+    file, err := fileHeader.Open()
+    if err != nil {
+        return "", fmt.Errorf("failed to open file: %v", err)
+    }
+    defer file.Close()
 
-	// 2. Generate a secure, unique filename (e.g., "kyc_docs/550e8400..._selfie.jpg")
-	extension := filepath.Ext(fileHeader.Filename)
-	uniqueFileName := fmt.Sprintf("kyc_docs/%s%s", uuid.New().String(), extension)
+    extension := filepath.Ext(fileHeader.Filename)
+    uniqueFileName := fmt.Sprintf("kyc_docs/%s%s", uuid.New().String(), extension)
 
-	// 3. Get your AWS credentials from the .env file
-	bucket := os.Getenv("AWS_BUCKET_NAME")
-	region := os.Getenv("AWS_REGION")
+    bucket := os.Getenv("AWS_BUCKET_NAME")
+    region := os.Getenv("AWS_REGION")
 
-	// 4. Load the AWS V2 Configuration
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
-	if err != nil {
-		return "", fmt.Errorf("failed to load AWS config: %v", err)
-	}
+    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+    if err != nil {
+        return "", fmt.Errorf("failed to load AWS config: %v", err)
+    }
 
-	// 5. Create the S3 client and Uploader
-	client := s3.NewFromConfig(cfg)
-	uploader := manager.NewUploader(client)
+    client := s3.NewFromConfig(cfg)
+    uploader := manager.NewUploader(client)
 
-	// 6. Perform the upload
-	result, err := uploader.Upload(context.TODO(), &s3.PutObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(uniqueFileName),
-		Body:   file,
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to upload to S3: %v", err)
-	}
+    result, err := uploader.Upload(context.TODO(), &s3.PutObjectInput{
+        Bucket: aws.String(bucket),
+        Key:    aws.String(uniqueFileName),
+        Body:   file,
+    })
+    if err != nil {
+        return "", fmt.Errorf("failed to upload to S3: %v", err)
+    }
 
-	// 7. Return the exact URL where the file is now saved!
-	return result.Location, nil
+    return result.Location, nil
+}
+
+// GeneratePresignedURL creates a 15-minute secure link using AWS SDK V2
+func GeneratePresignedURL(rawURL string) string {
+    if rawURL == "" {
+        return ""
+    }
+
+    // 1. Extract the exact file path (Object Key) from your full URL
+    parts := strings.SplitN(rawURL, ".amazonaws.com/", 2)
+    if len(parts) != 2 {
+        return rawURL // If it's not an AWS URL, return it normally
+    }
+    objectKey := parts[1]
+
+    bucket := os.Getenv("AWS_BUCKET_NAME")
+    region := os.Getenv("AWS_REGION")
+
+    // 2. Load the AWS V2 Configuration
+    cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+    if err != nil {
+        return rawURL
+    }
+
+    // 3. Create the S3 client and the V2 Presign Client
+    client := s3.NewFromConfig(cfg)
+    presignClient := s3.NewPresignClient(client)
+
+    // 4. Generate the 15-minute key
+    req, err := presignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
+        Bucket: aws.String(bucket),
+        Key:    aws.String(objectKey),
+    }, func(opts *s3.PresignOptions) {
+        opts.Expires = 15 * time.Minute
+    })
+
+    if err != nil {
+        return rawURL
+    }
+
+    return req.URL
 }

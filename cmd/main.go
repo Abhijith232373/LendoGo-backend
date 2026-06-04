@@ -47,11 +47,14 @@ func main() {
 	database.DB.AutoMigrate(&models.User{},
 		 &models.Consultation{},
 		 &models.LoanApplication{},
-		 &models.KYCDocuments{},     // 👈 Add this new table
-        &models.FinancialDetails{},) // 👈 Add this new table
+		 &models.KYCDocuments{},     
+        &models.FinancialDetails{},
+		&models.SystemWallet{},
+		&models.ChatMessage{},) 
 	
 	log.Println("Running Seeders...")
 	database.SeedAdmin()
+	database.RunSeeders()
 
 	// ==========================================
 	// 5. WIRING & STARTUP
