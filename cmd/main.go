@@ -42,27 +42,34 @@ func main() {
 	// 4. MIGRATIONS & SEEDING
 	// ==========================================
 	log.Println("Running Database Migrations...")
-	// Tip: You can pass multiple models into AutoMigrate at once!
-	// database.DB.AutoMigrate(&models.User{}, &models.Consultation{})
-	database.DB.AutoMigrate(&models.User{},
-		 &models.Consultation{},
-		 &models.LoanApplication{},
-		 &models.KYCDocuments{},     
-        &models.FinancialDetails{},
+	database.DB.AutoMigrate(
+		&models.User{},
+		&models.Consultation{},
+		&models.LoanApplication{},
+		&models.KYCDocuments{},
+		&models.FinancialDetails{},
 		&models.SystemWallet{},
 		&models.ChatMessage{},
 		&models.UserWallet{},
-	    &models.LedgerEntry{},) 
-	
+		&models.LedgerEntry{},
+		&models.UserProfile{}, // 👈 Successfully added for profile metrics!
+	)
+
 	log.Println("Running Seeders...")
 	database.SeedAdmin()
 	database.RunSeeders()
 
 	// ==========================================
-	// 5. WIRING & STARTUP
+	// 5. STATIC STORAGE ROUTE
+	// ==========================================
+	// 👇 CRITICAL: Enables React to fetch images via http://localhost:8080/uploads/profiles/...
+	fiberApp.Static("/uploads", "./uploads")
+
+	// ==========================================
+	// 6. WIRING & STARTUP
 	// ==========================================
 	
-	// Call your new app.go hub to wire everything together
+	// Call your app.go hub to wire everything together
 	app.SetupApp(fiberApp)
 
 	log.Println("Fiber Server running on port 8080...")

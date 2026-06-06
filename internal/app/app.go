@@ -7,9 +7,10 @@ import (
 	"lendogo-backend/internal/controllers/admin_controller"
 	"lendogo-backend/internal/controllers/auth_controller"
 	"lendogo-backend/internal/controllers/chat_controller"
-	controllers "lendogo-backend/internal/controllers/consultation_controller"
+	consultation_controller "lendogo-backend/internal/controllers/consultation_controller" // 👈 Fixed alias
 	"lendogo-backend/internal/controllers/loan_controller"
 	"lendogo-backend/internal/controllers/wallet_controller"
+	"lendogo-backend/internal/controllers/user_profile_controller"
 	"lendogo-backend/internal/repositories"
 	"lendogo-backend/internal/routes"
 	"lendogo-backend/internal/services"
@@ -26,6 +27,7 @@ func SetupApp(app *fiber.App) {
 	loanRepo := repositories.NewLoanRepository(database.DB)
 	walletRepo := repositories.NewWalletRepository(database.DB)
 	chatRepo := repositories.NewChatRepository(database.DB)
+	profileRepo := repositories.NewUserProfileRepository(database.DB)
 
 	// ==========================================
 	// 2. SERVICES & HUBS (Business Logic Layer)
@@ -34,8 +36,8 @@ func SetupApp(app *fiber.App) {
 	consultationService := services.NewConsultationService(consultationRepo)
 	loanService := services.NewLoanService(loanRepo)
 	walletService := services.NewWalletService(walletRepo)
+	profileService := services.NewUserProfileService(profileRepo)
 
-	// Initialize and run the WebSocket Chat Hub in a background goroutine
 	chatHub := services.NewChatHub(chatRepo)
 	go chatHub.Run()
 
@@ -43,12 +45,12 @@ func SetupApp(app *fiber.App) {
 	// 3. CONTROLLERS (HTTP Layer)
 	// ==========================================
 	authController := auth_controller.NewAuthController(authService)
-	consultationController := controllers.NewConsultationController(consultationService)
+	consultationController := consultation_controller.NewConsultationController(consultationService) // 👈 Uses new alias
 	adminController := admin_controller.NewAdminController()
 	loanController := loan_controller.NewLoanController(loanService)
 	walletController := wallet_controller.NewWalletController(walletService)
 	chatController := chat_controller.NewChatController(chatHub)
-
+	profileController := user_profile_controller.NewUserProfileController(profileService) 
 	// ==========================================
 	// 4. ROUTER SETUP
 	// ==========================================
@@ -60,4 +62,5 @@ func SetupApp(app *fiber.App) {
 	routes.SetupLoanRoutes(api, loanController)
 	routes.SetupWalletRoutes(api, walletController)
 	routes.SetupChatRoutes(api, chatController)
+	routes.SetupUserProfileRoutes(api, profileController)
 }
