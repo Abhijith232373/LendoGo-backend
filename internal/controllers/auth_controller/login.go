@@ -43,10 +43,10 @@ func (c *AuthController) Login(ctx *fiber.Ctx) error {
 	// Step 4: Attach the cookie to the HTTP response
 	ctx.Cookie(cookie)
 
-	// Step 5: Success! Send ONLY the User Data back to React in the JSON body.
-	// We no longer send the token in the JSON body because it's safely in the cookie.
+	// Step 5: Success! Send User Data and Token back to React in the JSON body.
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Login successful",
 		"data":    res.User, 
+		"token":   res.Token,
 	})
 }

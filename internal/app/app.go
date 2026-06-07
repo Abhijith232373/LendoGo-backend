@@ -7,7 +7,7 @@ import (
 	"lendogo-backend/internal/controllers/admin_controller"
 	"lendogo-backend/internal/controllers/auth_controller"
 	"lendogo-backend/internal/controllers/chat_controller"
-	consultation_controller "lendogo-backend/internal/controllers/consultation_controller" // 👈 Fixed alias
+	consultation_controller "lendogo-backend/internal/controllers/consultation_controller" 
 	"lendogo-backend/internal/controllers/loan_controller"
 	"lendogo-backend/internal/controllers/wallet_controller"
 	"lendogo-backend/internal/controllers/user_profile_controller"
@@ -45,7 +45,7 @@ func SetupApp(app *fiber.App) {
 	// 3. CONTROLLERS (HTTP Layer)
 	// ==========================================
 	authController := auth_controller.NewAuthController(authService)
-	consultationController := consultation_controller.NewConsultationController(consultationService) // 👈 Uses new alias
+	consultationController := consultation_controller.NewConsultationController(consultationService)
 	adminController := admin_controller.NewAdminController()
 	loanController := loan_controller.NewLoanController(loanService)
 	walletController := wallet_controller.NewWalletController(walletService)
