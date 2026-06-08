@@ -34,7 +34,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.42.1 // indirect
 	github.com/aws/smithy-go v1.25.1 // indirect
 	github.com/fasthttp/websocket v1.5.8 // indirect
+	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/savsgio/gotils v0.0.0-20240303185622-093b76447511 // indirect
+	github.com/segmentio/kafka-go v0.4.51 // indirect
 	golang.org/x/net v0.54.0 // indirect
 )
 

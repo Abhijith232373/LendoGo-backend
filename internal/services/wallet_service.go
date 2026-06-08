@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context" // 👈 Added for Kafka background context
 	"errors"
 	"fmt"
 	"math"
@@ -8,7 +9,7 @@ import (
 
 	"lendogo-backend/internal/repositories"
 	"lendogo-backend/structures/dto"
-	"lendogo-backend/utils"
+	"lendogo-backend/utils" // 👈 Your utils package (for Razorpay AND Kafka)
 
 	"github.com/google/uuid"
 )
@@ -21,17 +22,23 @@ type WalletService interface {
 
 	// Loan Disbursal
 	ProcessDisbursal(req dto.DisburseLoanRequest) error
-	
-	// 👇 NEW: Fetch User Balance
+
+	// Fetch User Balance
 	GetUserBalance(userID string) (float64, error)
 }
 
+// 👇 1. ADDED THE PRODUCER TO THE STRUCT
 type walletServiceImpl struct {
-	repo repositories.WalletRepository
+	repo     repositories.WalletRepository
+	producer *utils.KafkaProducer 
 }
 
-func NewWalletService(repo repositories.WalletRepository) WalletService {
-	return &walletServiceImpl{repo: repo}
+// 👇 2. UPDATED THE CONSTRUCTOR TO REQUIRE THE PRODUCER
+func NewWalletService(repo repositories.WalletRepository, producer *utils.KafkaProducer) WalletService {
+	return &walletServiceImpl{
+		repo:     repo,
+		producer: producer, 
+	}
 }
 
 // ==========================================
@@ -55,7 +62,32 @@ func (s *walletServiceImpl) ProcessPaymentVerification(orderID, paymentID, signa
 	}
 
 	// 2. Add Money using Repository
-	return s.repo.CreditSystemWallet(amount)
+	err := s.repo.CreditSystemWallet(amount)
+	if err != nil {
+		return err // If DB fails, don't send the Kafka event!
+	}
+
+	// 👇 3. KAFKA TRIGGER: BLAST THE EVENT AFTER SUCCESSFUL RECHARGE! 👇
+	payload := map[string]interface{}{
+		"type":           "SYSTEM_RECHARGE",
+		"transaction_id": paymentID,
+		"order_id":       orderID,
+		"amount":         amount,
+		"status":         "COMPLETED",
+	}
+
+	// Publish the event to the background workers (Takes ~2 milliseconds)
+	kafkaErr := s.producer.PublishEvent(context.Background(), "telemetry.payments", "SYSTEM_RECHARGE_SUCCESS", payload)
+	if kafkaErr != nil {
+		fmt.Println("❌ KAFKA ERROR: Failed to publish system recharge event:", kafkaErr)
+		// We don't return the error here because the payment actually succeeded in the DB.
+		// We just log it so the admin still gets a success response.
+	} else {
+		fmt.Println("🚀 KAFKA EVENT PUBLISHED: SYSTEM_RECHARGE_SUCCESS")
+	}
+	// 👆 END OF KAFKA TRIGGER 👆
+
+	return nil
 }
 
 func (s *walletServiceImpl) DirectFund(amount float64) error {
@@ -70,8 +102,8 @@ func (s *walletServiceImpl) DirectFund(amount float64) error {
 func (s *walletServiceImpl) ProcessDisbursal(req dto.DisburseLoanRequest) error {
 	// 1. Security Math Verification: Never trust the frontend math blindly!
 	expectedNet := req.SanctionedAmt - req.ProcessingFee
-	
-	// FinTech Rule: Use math.Abs to prevent floating-point mismatch errors 
+
+	// FinTech Rule: Use math.Abs to prevent floating-point mismatch errors
 	if math.Abs(req.NetPayout-expectedNet) > 0.01 {
 		return errors.New("security alert: payout amount mismatch detected")
 	}
@@ -101,6 +133,6 @@ func (s *walletServiceImpl) GetUserBalance(userID string) (float64, error) {
 	if err != nil {
 		return 0, errors.New("invalid user ID format")
 	}
-	
+
 	return s.repo.GetUserBalance(userUUID)
 }
