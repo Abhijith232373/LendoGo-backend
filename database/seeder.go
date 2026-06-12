@@ -6,12 +6,11 @@ import (
 
 	// Make sure this matches your module name in go.mod!
 	"lendogo-backend/structures/models"
-	"lendogo-backend/utils"
 )
 
 // RunSeeders is the master function to execute all database seeders
 func RunSeeders() {
-	log.Println("🌱 Starting database seeders...")
+	log.Println(" Starting database seeders...")
 
 	// 1. Run Admin Seeder
 	SeedAdmin()
@@ -26,7 +25,7 @@ func RunSeeders() {
 func SeedAdmin() {
 	var adminCount int64
 
-	// 2. Read the credentials from your .env file
+	// 1. Read the credentials from your .env file
 	adminEmail := os.Getenv("ADMIN_EMAIL")
 	adminPassword := os.Getenv("ADMIN_PASSWORD")
 
@@ -35,37 +34,44 @@ func SeedAdmin() {
 		return
 	}
 
-	// 1. Check if ANY admin already exists in the database by email
-	DB.Model(&models.User{}).Where("email = ?", adminEmail).Count(&adminCount)
+	// 2. Check if ANY admin already exists in the STAFF table by email
+	DB.Model(&models.Staff{}).Where("email = ?", adminEmail).Count(&adminCount)
 
 	if adminCount > 0 {
 		// An admin already exists, we don't need to do anything.
 		return
 	}
 
-	log.Println("No admin found. Creating default master admin account...")
+	log.Println("No admin found. Creating default master admin account in staffs table...")
 
-
-
-	// 3. Hash the password securely using your existing util
-	hashedPassword, err := utils.HashPassword(adminPassword)
-	if err != nil {
-		log.Fatal("Failed to hash default admin password: ", err)
-	}
-
-	// 4. Build the Admin User
-	adminUser := models.User{
+	// Note: We DO NOT manually hash the password here using utils.HashPassword.
+	// Because your models.Staff has a BeforeCreate hook, GORM will automatically
+	// hash this plain text password right before saving it to the database!
+	
+	// 3. Build the Admin Staff Member
+	adminUser := models.Staff{
 		FullName: "System Administrator",
 		Email:    adminEmail,
-		Password: hashedPassword,
-		Role:     "admin", // This is what gives them special powers!
+		Password: adminPassword, // Passed as plain text!
+		Role:     "Superadmin",  // Triggers the Master Bypass in our Middleware
+		Status:   "Active",
+		Permissions: map[string]bool{
+			"dashboard.view":      true,
+			"users.read":          true,
+			"users.create":        true,
+			"users.update":        true,
+			"users.delete":        true,
+			"loans.view":          true,
+			"loans.update":        true,
+			"consultation.view":   true,
+		},
 	}
 
-	// 5. Save to the database
+	// 4. Save to the database
 	if err := DB.Create(&adminUser).Error; err != nil {
 		log.Printf("⚠️ Warning: Failed to seed admin user: %v\n", err)
 	} else {
-		log.Println("✅ Default Admin account created successfully!")
+		log.Println("✅ Default Admin account created successfully in staffs table!")
 	}
 }
 

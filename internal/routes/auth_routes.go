@@ -14,9 +14,7 @@ func SetupAuthRoutes(api fiber.Router, authController *auth_controller.AuthContr
 	auth.Post("/set-password", authController.SetPassword)
 	
 	// Keep login working 
-
 	auth.Post("/login", authController.Login)
-
 	auth.Post("/forgot-password/send-otp", authController.ForgotPasswordSendOTP)
     auth.Post("/forgot-password/reset", authController.ResetPassword)
 

@@ -9,37 +9,61 @@ import (
 func SetupAdminRoutes(api fiber.Router, adminCtrl *admin_controller.AdminController) {
 	adminGroup := api.Group("/admin")
 	
-	// 1. Base Security: Must be logged in AND be an Admin type
+	// 👇 PUBLIC ROUTE: Unprotected so staff can actually log in!
+	adminGroup.Post("/login", adminCtrl.AdminLogin)
+
+	// ==========================================
+	// THE VAULT DOOR: Everything below this line requires a valid Admin JWT
+	// ==========================================
 	adminGroup.Use(middlewares.Protected(), middlewares.AdminOnly())
 
 	// ==========================================
-	// USER MANAGEMENT (Locked to "user_management")
+	// USER MANAGEMENT (Granular UI Toggles)
 	// ==========================================
-	adminGroup.Get("/all-users", middlewares.RequirePermission("user_management"), adminCtrl.GetAllUsers)
-	adminGroup.Post("/users", middlewares.RequirePermission("user_management"), adminCtrl.CreateUser)
-	adminGroup.Put("/users/:id", middlewares.RequirePermission("user_management"), adminCtrl.UpdateUser)
-	adminGroup.Delete("/users/:id", middlewares.RequirePermission("user_management"), adminCtrl.DeleteUser)
-	adminGroup.Patch("/users/:id/status", middlewares.RequirePermission("user_management"), adminCtrl.UpdateUserStatus)
+	// Tied to "Read User" toggle
+	adminGroup.Get("/all-users", middlewares.RequirePermission("users.read"), adminCtrl.GetAllUsers)
+	
+	// Tied to "Create User" toggle
+	adminGroup.Post("/users", middlewares.RequirePermission("users.create"), adminCtrl.CreateUser)
+	
+	// Tied to "Update User" toggle
+	adminGroup.Put("/users/:id", middlewares.RequirePermission("users.update"), adminCtrl.UpdateUser)
+	adminGroup.Patch("/users/:id/status", middlewares.RequirePermission("users.update"), adminCtrl.UpdateUserStatus)
+	
+	// Tied to "Delete User" toggle
+	adminGroup.Delete("/users/:id", middlewares.RequirePermission("users.delete"), adminCtrl.DeleteUser)
 	
 	// ==========================================
-	// LOAN APPLICATIONS (Locked to "loan_applications")
+	// LOAN APPLICATIONS
 	// ==========================================
-	adminGroup.Get("/applications", middlewares.RequirePermission("loan_applications"), adminCtrl.GetAllApplications)
-	adminGroup.Patch("/applications/:id/status", middlewares.RequirePermission("loan_applications"), adminCtrl.UpdateApplicationStatus)
+	// Tied to "View Applications" toggle
+	adminGroup.Get("/applications", middlewares.RequirePermission("loans.view"), adminCtrl.GetAllApplications)
+	
+	// Tied to "Update Applications" toggle
+	adminGroup.Patch("/applications/:id/status", middlewares.RequirePermission("loans.update"), adminCtrl.UpdateApplicationStatus)
 
 	// ==========================================
-	// SYSTEM DASHBOARD (Locked to "dashboard")
+	// SYSTEM DASHBOARD
 	// ==========================================
-	adminGroup.Get("/system-stats", middlewares.RequirePermission("dashboard"), adminCtrl.GetSystemStats)
+	// Tied to "View Dashboard" toggle
+	adminGroup.Get("/system-stats", middlewares.RequirePermission("dashboard.view"), adminCtrl.GetSystemStats)
 
 	// ==========================================
-	// CUSTOMER CARE (Locked to "customer_care")
+	// GLOBAL RBAC PERMISSIONS (Sync)
 	// ==========================================
-	adminGroup.Get("/consultations", middlewares.RequirePermission("customer_care"), adminCtrl.GetAllConsultations)
+	adminGroup.Get("/global-permissions", adminCtrl.GetGlobalPermissions)
+	adminGroup.Post("/global-permissions", middlewares.AdminOnly(), adminCtrl.UpdateGlobalPermissions)
+
+	// ==========================================
+	// CUSTOMER CARE
+	// ==========================================
+	// Tied to "View Consultation" toggle
+	adminGroup.Get("/consultations", middlewares.RequirePermission("consultation.view"), adminCtrl.GetAllConsultations)
 
 	// ==========================================
 	// STAFF MANAGEMENT 
 	// ==========================================
-	adminGroup.Post("/staff", middlewares.RequirePermission("user_management"), adminCtrl.CreateStaff)
-	adminGroup.Get("/staff", middlewares.RequirePermission("user_management"), adminCtrl.GetAllStaff)
+	// Tied to User Management toggles (or you can make specific "staff.create" toggles later)
+	adminGroup.Post("/staff", middlewares.RequirePermission("users.create"), adminCtrl.CreateStaff)
+	adminGroup.Get("/staff", middlewares.RequirePermission("users.read"), adminCtrl.GetAllStaff)
 }
