@@ -96,6 +96,10 @@ func SetupAdminRoutes(api fiber.Router, adminCtrl *admin_controller.AdminControl
 	// ==========================================
 	// Tied to an "audit.read" toggle in your UI so only authorized staff can see the paper trail
 	adminGroup.Get("/audit-logs", middlewares.RequirePermission("audit.read"), adminCtrl.GetAuditLogs)
+
+	// ==========================================
+	// CAREER MANAGEMENT
+	// ==========================================
 }
 
 
