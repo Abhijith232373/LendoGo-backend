@@ -496,14 +496,16 @@ func (c *AdminController) UpdateAdminAvatar(ctx *fiber.Ctx) error {
 	// 4. Log the action
 	utils.RecordAudit(actorID, actorName, "INFO", "Staff", actorID.String(), "Admin updated profile picture", ctx.IP())
 
+	presignedURL := utils.GeneratePresignedURL(s3URL)
+
 	// 5. Broadcast if needed (optional)
 	websockets.BroadcastMessage("STAFF_UPDATED", fiber.Map{
 		"staff_id": actorID,
-		"avatar":   s3URL,
+		"avatar":   presignedURL,
 	})
 
 	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Admin profile picture updated successfully",
-		"avatar":  s3URL,
+		"avatar":  presignedURL,
 	})
 }

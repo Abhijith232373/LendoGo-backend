@@ -19,15 +19,20 @@ type LoanService interface {
 	ApproveAndDisburse(loanID uuid.UUID) error
 	GenerateEMISchedule(ctx context.Context, loanIDStr string) error
 	ProcessDueEMIs(ctx context.Context) error // 👈 Added contract for Cronjob
+
+	// Frontend API Services
+	GetMyLoans(userID string) ([]models.LoanApplication, error)
+	GetMyRepayments(loanID string) ([]models.EMISchedule, error)
 }
 
 type loanServiceImpl struct {
-	repo repositories.LoanRepository
+	repo         repositories.LoanRepository
+	notifService NotificationService
 }
 
 // NewLoanService injects the repository dependency.
-func NewLoanService(repo repositories.LoanRepository) LoanService {
-	return &loanServiceImpl{repo: repo}
+func NewLoanService(repo repositories.LoanRepository, notifService NotificationService) LoanService {
+	return &loanServiceImpl{repo: repo, notifService: notifService}
 }
 
 // ProcessApplication calculates EMI and initializes the loan state.
@@ -125,11 +130,39 @@ func (s *loanServiceImpl) ProcessDueEMIs(ctx context.Context) error {
 	fmt.Printf("⚠️ [EMI CHECKER] Processing %d due EMIs.\n", len(emis))
 
 	for _, emi := range emis {
-		// Mock notification dispatch. 
-		// In production, push to a Kafka topic (e.g., telemetry.notifications) or an SQS queue.
-		fmt.Printf("🔔 DISPATCH NOTIFICATION: User %v owes ₹%.2f for Loan %v (Installment %d)\n", 
-			emi.UserID, emi.EMI, emi.LoanID, emi.InstallmentNo)
+		// Actually mark the EMI as overdue in the database!
+		err := s.repo.UpdateEMIStatus(emi.ID, "OVERDUE")
+		if err != nil {
+			fmt.Printf("❌ Failed to update EMI status for %v: %v\n", emi.ID, err)
+		} else {
+			fmt.Printf("🔔 DISPATCH NOTIFICATION: User %v owes ₹%.2f for Loan %v (Installment %d) -> Marked OVERDUE\n", 
+				emi.UserID, emi.EMI, emi.LoanID, emi.InstallmentNo)
+			
+			// Dispatch In-App Notification
+			notifMsg := fmt.Sprintf("Repayment due: EMI of ₹%.2f on %s.", emi.EMI, emi.DueDate.Format("Jan 02, 2006"))
+			s.notifService.SendNotification(emi.UserID, notifMsg, "WARNING", "repayment")
+		}
 	}
 
 	return nil
+}
+
+// ==========================================
+// FRONTEND API SERVICES
+// ==========================================
+
+func (s *loanServiceImpl) GetMyLoans(userID string) ([]models.LoanApplication, error) {
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user ID: %v", err)
+	}
+	return s.repo.GetLoansByUserID(userUUID)
+}
+
+func (s *loanServiceImpl) GetMyRepayments(loanID string) ([]models.EMISchedule, error) {
+	loanUUID, err := uuid.Parse(loanID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid loan ID: %v", err)
+	}
+	return s.repo.GetEMIsByLoanID(loanUUID)
 }

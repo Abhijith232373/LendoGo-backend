@@ -23,4 +23,10 @@ func SetupLoanRoutes(api fiber.Router, loanCtrl *loan_controller.LoanController,
 		middlewares.RequireFeature(configService, "apply_loan"), // 👈 The Bouncer!
 		loanCtrl.ApplyForLoan,
 	)
+
+	// Fetch all loans for the logged-in user
+	loanGroup.Get("/my-loans", loanCtrl.GetMyLoans)
+
+	// Fetch repayments for a specific loan
+	loanGroup.Get("/:id/repayments", loanCtrl.GetMyRepayments)
 }

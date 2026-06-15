@@ -28,6 +28,10 @@ type LoanRepository interface {
 	// 👇 NEW: Cronjob Queries
 	GetDueEMIs(today time.Time) ([]models.EMISchedule, error)
 	UpdateEMIStatus(emiID uuid.UUID, status string) error
+
+	// Frontend API Queries
+	GetLoansByUserID(userID uuid.UUID) ([]models.LoanApplication, error)
+	GetEMIsByLoanID(loanID uuid.UUID) ([]models.EMISchedule, error)
 }
 
 type loanRepositoryImpl struct {
@@ -147,4 +151,20 @@ func (r *loanRepositoryImpl) GetDueEMIs(today time.Time) ([]models.EMISchedule, 
 // UpdateEMIStatus changes an EMI from PENDING to PAID or OVERDUE
 func (r *loanRepositoryImpl) UpdateEMIStatus(emiID uuid.UUID, status string) error {
 	return r.db.Model(&models.EMISchedule{}).Where("id = ?", emiID).Update("status", status).Error
+}
+
+// ==========================================
+// FRONTEND API QUERIES
+// ==========================================
+
+func (r *loanRepositoryImpl) GetLoansByUserID(userID uuid.UUID) ([]models.LoanApplication, error) {
+	var loans []models.LoanApplication
+	err := r.db.Where("user_id = ?", userID).Order("created_at desc").Find(&loans).Error
+	return loans, err
+}
+
+func (r *loanRepositoryImpl) GetEMIsByLoanID(loanID uuid.UUID) ([]models.EMISchedule, error) {
+	var emis []models.EMISchedule
+	err := r.db.Where("loan_id = ?", loanID).Order("installment_no asc").Find(&emis).Error
+	return emis, err
 }

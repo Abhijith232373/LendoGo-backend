@@ -76,12 +76,12 @@ func GeneratePresignedURL(rawURL string) string {
     client := s3.NewFromConfig(cfg)
     presignClient := s3.NewPresignClient(client)
 
-    // 4. Generate the 15-minute key
+    // 4. Generate the 7-day key
     req, err := presignClient.PresignGetObject(context.TODO(), &s3.GetObjectInput{
         Bucket: aws.String(bucket),
         Key:    aws.String(objectKey),
     }, func(opts *s3.PresignOptions) {
-        opts.Expires = 15 * time.Minute
+        opts.Expires = 7 * 24 * time.Hour
     })
 
     if err != nil {

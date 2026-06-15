@@ -16,6 +16,7 @@ import (
 	"lendogo-backend/internal/controllers/config_controller"
 	consultation_controller "lendogo-backend/internal/controllers/consultation_controller"
 	"lendogo-backend/internal/controllers/loan_controller"
+	"lendogo-backend/internal/controllers/notification_controller"
 	"lendogo-backend/internal/controllers/payment_controller"
 	"lendogo-backend/internal/controllers/user_profile_controller"
 	"lendogo-backend/internal/controllers/wallet_controller"
@@ -72,6 +73,7 @@ type Repositories struct {
 	Admin        repositories.AdminRepository
 	Career       repositories.CareerRepository 
 	Config       repositories.ConfigRepository // 👈 Added Config Repo
+	Notification repositories.NotificationRepository
 }
 
 func setupRepositories() Repositories {
@@ -86,6 +88,7 @@ func setupRepositories() Repositories {
 		Admin:        repositories.NewAdminRepository(database.DB), 
 		Career:       repositories.NewCareerRepository(database.DB),
 		Config:       repositories.NewConfigRepository(database.DB), // 👈 Added Config Repo
+		Notification: repositories.NewNotificationRepository(database.DB),
 	}
 }
 
@@ -100,6 +103,7 @@ type Services struct {
 	Admin        services.AdminService 
 	Career       services.CareerService
 	Config       services.ConfigService // 👈 Added Config Service
+	Notification services.NotificationService
 }
 
 func setupServices(r Repositories, producer *utils.KafkaProducer) Services {
@@ -109,7 +113,7 @@ func setupServices(r Repositories, producer *utils.KafkaProducer) Services {
 	return Services{
 		Auth:         services.NewAuthService(r.User),
 		Consultation: services.NewConsultationService(r.Consultation),
-		Loan:         services.NewLoanService(r.Loan),
+		Loan:         services.NewLoanService(r.Loan, services.NewNotificationService(r.Notification)),
 		Wallet:       services.NewWalletService(r.Wallet, producer),
 		Profile:      services.NewUserProfileService(r.Profile),
 		ChatHub:      hub,
@@ -117,6 +121,7 @@ func setupServices(r Repositories, producer *utils.KafkaProducer) Services {
 		Admin:        services.NewAdminService(r.Admin), 
 		Career:       services.NewCareerService(r.Career),
 		Config:       services.NewConfigService(r.Config), // 👈 Added Config Service
+		Notification: services.NewNotificationService(r.Notification),
 	}
 }
 
@@ -129,7 +134,7 @@ func startConsumers(s Services) {
 	paymentConsumer := consumers.NewPaymentConsumer(broker, "telemetry.payments", "payment-processor-group", s.Loan)
 	go paymentConsumer.Start(context.Background())
 
-	loanConsumer := consumers.NewLoanConsumer(broker, "telemetry.loans", "loan-processor-group", s.Loan)
+	loanConsumer := consumers.NewLoanConsumer(broker, "telemetry.loans", "loan-processor-group", s.Loan, s.Notification)
 	go loanConsumer.Start(context.Background())
 }
 
@@ -154,6 +159,7 @@ func setupRoutes(app *fiber.App, s Services, r Repositories) {
 	adminController := admin_controller.NewAdminController(s.Admin)
 	careerController := career_controller.NewCareerController(s.Career)
 	configController := config_controller.NewConfigController(s.Config) 
+	notificationController := notification_controller.NewNotificationController(s.Notification)
 
 	// ==========================================
 	// Setup Standard Routes
@@ -173,4 +179,5 @@ func setupRoutes(app *fiber.App, s Services, r Repositories) {
 	routes.SetupUserProfileRoutes(api, profileController, s.Config)
 	routes.SetupLoanRoutes(api, loanController, s.Config) 
 	routes.SetupCareerRoutes(api, careerController, s.Config) 
+	routes.SetupNotificationRoutes(api, notificationController)
 }

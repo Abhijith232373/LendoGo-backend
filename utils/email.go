@@ -131,3 +131,23 @@ func SendOTPEmail(toEmail string, otp string) error {
 	}
 	return nil
 }
+
+// SendDisbursalEmail mocks sending a disbursal email
+func SendDisbursalEmail(toEmail string, amount interface{}) error {
+	fmt.Printf("\n========================================\n")
+	fmt.Printf("📧 EMAIL SENT TO: %s\n", toEmail)
+	fmt.Printf("   SUBJECT: Your LendoGo Loan has been Disbursed!\n")
+	fmt.Printf("   BODY: Congratulations! Your loan of ₹%v has been credited to your LendoGo Wallet.\n", amount)
+	fmt.Printf("========================================\n\n")
+	return nil
+}
+
+// SendNotificationEmail mocks sending a general notification email
+func SendNotificationEmail(toEmail string, subject string, message string) error {
+	fmt.Printf("\n========================================\n")
+	fmt.Printf("📧 EMAIL SENT TO: %s\n", toEmail)
+	fmt.Printf("   SUBJECT: %s\n", subject)
+	fmt.Printf("   BODY: %s\n", message)
+	fmt.Printf("========================================\n\n")
+	return nil
+}

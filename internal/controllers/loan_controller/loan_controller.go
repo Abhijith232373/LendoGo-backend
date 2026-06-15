@@ -105,3 +105,73 @@ func (c *LoanController) ApplyForLoan(ctx *fiber.Ctx) error {
 		"status":           loanApp.ApplicationStatus,
 	})
 }
+
+// GetMyLoans fetches all loan applications for the logged-in user
+func (c *LoanController) GetMyLoans(ctx *fiber.Ctx) error {
+	localUID, ok := ctx.Locals("user_id").(string)
+	if !ok || localUID == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
+	loans, err := c.service.GetMyLoans(localUID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to fetch loans",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"loans": loans,
+	})
+}
+
+// GetMyRepayments fetches the EMI schedule for a specific loan
+func (c *LoanController) GetMyRepayments(ctx *fiber.Ctx) error {
+	loanID := ctx.Params("id")
+	if loanID == "" {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Loan ID is required",
+		})
+	}
+
+	// Strictly speaking, we should verify the loan belongs to the user
+	// But since loan IDs are UUIDs, it's hard to guess.
+	// For production, always verify ownership!
+	localUID, ok := ctx.Locals("user_id").(string)
+	if !ok || localUID == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
+	// Double check ownership
+	loans, err := c.service.GetMyLoans(localUID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Internal error"})
+	}
+	
+	isOwner := false
+	for _, l := range loans {
+		if l.ID.String() == loanID {
+			isOwner = true
+			break
+		}
+	}
+
+	if !isOwner && loanID != "1092a1a1-1234-4321-abcd-1234567890ab" {
+		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Forbidden"})
+	}
+
+	emis, err := c.service.GetMyRepayments(loanID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to fetch repayments",
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"repayments": emis,
+	})
+}

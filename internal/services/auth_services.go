@@ -76,12 +76,18 @@ func (s *authServiceImpl) Login(req dto.LoginReq) (*dto.AuthRes, error) {
 			return nil, errors.New("failed to generate login token")
 		}
 
+		avatar := ""
+		if user.Profile != nil && user.Profile.ProfileImage != "" {
+			avatar = utils.GeneratePresignedURL(user.Profile.ProfileImage)
+		}
+
 		res := &dto.AuthRes{
 			Token: token,
 			User: dto.UserRes{
 				ID:       user.ID.String(),
 				FullName: user.FullName,
 				Email:    user.Email,
+				Avatar:   avatar,
 				Role:     effectiveRole,
 				Status:   user.Status,
 			},
@@ -113,6 +119,7 @@ func (s *authServiceImpl) Login(req dto.LoginReq) (*dto.AuthRes, error) {
 				ID:          staff.ID.String(),
 				FullName:    staff.FullName,
 				Email:       staff.Email,
+				Avatar:      utils.GeneratePresignedURL(staff.Avatar),
 				Role:        staff.Role,
 				Status:      staff.Status,
 				Permissions: staff.Permissions,

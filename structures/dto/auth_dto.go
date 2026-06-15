@@ -38,6 +38,7 @@ type UserRes struct {
     ID          string          `json:"id"` // Changed to string for UUID compatibility
     FullName    string          `json:"full_name"`
     Email       string          `json:"email"`
+    Avatar      string          `json:"avatar,omitempty"`
     Role        string          `json:"role"` 
     Status      string          `json:"status"`
     Permissions map[string]bool `json:"permissions,omitempty"`
