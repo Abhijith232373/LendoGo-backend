@@ -1,6 +1,5 @@
 package dto
 
-// UpdateConfigReq is the payload expected from the Admin Panel
 type UpdateConfigReq struct {
 	ApplyLoanEnabled     bool `json:"apply_loan_enabled"`
 	LoginEnabled         bool `json:"login_enabled"`

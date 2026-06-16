@@ -2,9 +2,8 @@ package models
 
 import (
 	"time"
-
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt" // 👈 We use this directly to break the import cycle!
+	"golang.org/x/crypto/bcrypt" 
 	"gorm.io/gorm"
 )
 
@@ -26,9 +25,7 @@ func (s *Staff) BeforeCreate(tx *gorm.DB) (err error) {
 	if s.ID == uuid.Nil {
 		s.ID = uuid.New()
 	}
-	
 	if s.Password != "" {
-		// 👇 Your exact logic, just using bcrypt directly instead of the utils folder
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(s.Password), bcrypt.DefaultCost)
 		if err != nil {
 			return err

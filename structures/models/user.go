@@ -2,7 +2,6 @@ package models
 
 import (
 	"time"
-
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -18,14 +17,10 @@ type User struct {
 	CreatedAt       time.Time      `json:"created_at"`
 	UpdatedAt       time.Time      `json:"updated_at"`
 	DeletedAt       gorm.DeletedAt `gorm:"index" json:"-"`
-	
-	// 👇 THE FIX: Added the '*' to make it a pointer!
 	Profile         *UserProfile   `gorm:"foreignKey:UserID;references:ID" json:"profile"` 
 }
 
-// GORM automatically runs this right before saving a new user to the database!
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
-	// If the ID is completely blank (all zeros), generate a new real one!
 	if u.ID == uuid.Nil {
 		u.ID = uuid.New()
 	}

@@ -2,14 +2,12 @@ package dto
 
 import "time"
 
-// IncomingMessage is what React sends to the Go server
 type IncomingMessage struct {
 	Text        string `json:"text"`
 	IsFromAdmin bool   `json:"is_from_admin"`
-	ReceiverID  string `json:"receiver_id"` // Who is this going to?
+	ReceiverID  string `json:"receiver_id"` 
 }
 
-// OutgoingMessage is what Go broadcasts back to React
 type OutgoingMessage struct {
 	SenderID    string    `json:"sender_id"`
 	ReceiverID  string    `json:"receiver_id"`

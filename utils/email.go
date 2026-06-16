@@ -11,12 +11,9 @@ func SendOTPEmail(toEmail string, otp string) error {
 	password := os.Getenv("SMTP_PASSWORD")
 	host := os.Getenv("SMTP_HOST")
 	port := os.Getenv("SMTP_PORT")
-
 	address := fmt.Sprintf("%s:%s", host, port)
-
 	subject := "Subject: Your LendoGo Verification Code\n"
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-
 	body := fmt.Sprintf(`<!DOCTYPE html>
 <html>
 <head>
@@ -59,7 +56,6 @@ func SendOTPEmail(toEmail string, otp string) error {
 <body>
 <div class="wrap">
  <div class="card">
-
   <div class="hdr">
    <div class="logo-row">
     <div class="logo-mark">
@@ -75,17 +71,14 @@ func SendOTPEmail(toEmail string, otp string) error {
     <span class="trust-badge">&#x1F510; 256-bit TLS</span>
    </div>
   </div>
-
   <div class="body">
    <p class="greeting">Verify your identity</p>
    <p class="intro">Use the one-time code below to complete your sign-in. This code is valid for 5 minutes and can only be used once.</p>
-
    <div class="otp-box">
     <div class="otp-label">One-time passcode</div>
     <div class="otp-code">%s</div>
     <div class="otp-timer">&#x23F1; Expires in 5 minutes</div>
    </div>
-
    <div class="sec-box">
     <p class="sec-title">&#x1F6E1; Security notice</p>
     <ul class="sec-list">
@@ -95,11 +88,8 @@ func SendOTPEmail(toEmail string, otp string) error {
      <li>If you didn't request this, secure your account now</li>
     </ul>
    </div>
-
    <div class="divider"></div>
-
    <p class="note">Didn't request this code? <a href="#">Report suspicious activity &rarr;</a></p>
-
    <div class="badges">
     <span class="badge">Encrypted</span>
     <span class="badge">PCI DSS</span>
@@ -107,7 +97,6 @@ func SendOTPEmail(toEmail string, otp string) error {
     <span class="badge">RBI regulated</span>
    </div>
   </div>
-
   <div class="ftr">
    <div class="ftr-links">
     <a href="#">Privacy policy</a>
@@ -116,7 +105,6 @@ func SendOTPEmail(toEmail string, otp string) error {
    </div>
    <p class="ftr-copy">&copy; 2026 LendoGo Financial Technologies Pvt. Ltd. &middot; All rights reserved</p>
   </div>
-
  </div>
 </div>
 </body>
@@ -132,7 +120,6 @@ func SendOTPEmail(toEmail string, otp string) error {
 	return nil
 }
 
-// SendDisbursalEmail mocks sending a disbursal email
 func SendDisbursalEmail(toEmail string, amount interface{}) error {
 	fmt.Printf("\n========================================\n")
 	fmt.Printf("📧 EMAIL SENT TO: %s\n", toEmail)
@@ -142,7 +129,6 @@ func SendDisbursalEmail(toEmail string, amount interface{}) error {
 	return nil
 }
 
-// SendNotificationEmail mocks sending a general notification email
 func SendNotificationEmail(toEmail string, subject string, message string) error {
 	fmt.Printf("\n========================================\n")
 	fmt.Printf("📧 EMAIL SENT TO: %s\n", toEmail)

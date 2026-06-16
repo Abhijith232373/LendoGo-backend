@@ -1,6 +1,5 @@
 package dto
 
-// DisburseLoanRequest catches the data from the Admin React Modal
 type DisburseLoanRequest struct {
 	LoanID        string  `json:"loan_id" validate:"required"`
 	UserID        string  `json:"user_id" validate:"required"`

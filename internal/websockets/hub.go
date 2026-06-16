@@ -6,12 +6,10 @@ import (
 	"github.com/gofiber/websocket/v2"
 )
 
-// Clients holds all active admin connections
 var Clients = make(map[*websocket.Conn]bool)
 var broadcast = make(chan interface{}, 100)
 var Mutex = sync.Mutex{}
 
-// StartHub listens for messages and sends them to all connected admins
 func StartHub() {
 	for {
 		msg := <-broadcast
@@ -28,7 +26,6 @@ func StartHub() {
 	}
 }
 
-// BroadcastMessage allows your REST controllers to trigger UI updates!
 func BroadcastMessage(eventType string, data interface{}) {
 	broadcast <- map[string]interface{}{
 		"event": eventType,
