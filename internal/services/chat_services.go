@@ -62,19 +62,31 @@ func (h *ChatHub) Run() {
 			h.mu.Unlock()
 
 		case bm := <-h.Broadcast:
-			// 1. Persist to database prior to broadcast
-			msg := &models.ChatMessage{
-				SenderID:    bm.Payload.SenderID,
-				ReceiverID:  bm.Payload.ReceiverID,
-				IsFromAdmin: bm.Payload.IsFromAdmin,
-				MessageText: bm.Payload.Text,
-			}
-			if err := h.Repo.SaveMessage(msg); err != nil {
-				log.Println("DB save error:", err)
+			// 1. Persist to database prior to broadcast IF it's not a system broadcast
+			if bm.Payload.ReceiverID != "ALL" {
+				msg := &models.ChatMessage{
+					SenderID:    bm.Payload.SenderID,
+					ReceiverID:  bm.Payload.ReceiverID,
+					IsFromAdmin: bm.Payload.IsFromAdmin,
+					MessageText: bm.Payload.Text,
+				}
+				if err := h.Repo.SaveMessage(msg); err != nil {
+					log.Println("DB save error:", err)
+				}
 			}
 
 			h.mu.Lock()
 			for client := range h.Clients {
+				// Broadcast system events to ALL active connections!
+				if bm.Payload.ReceiverID == "ALL" {
+					if err := utils.SafeWriteJSON(client.Conn, bm.Payload); err != nil {
+						log.Println("Broadcast error:", err)
+						delete(h.Clients, client)
+						client.Conn.Close()
+					}
+					continue
+				}
+
 				// 2. Unicast to intended receiver
 				if client.UserID == bm.Payload.ReceiverID {
 					if err := utils.SafeWriteJSON(client.Conn, bm.Payload); err != nil {

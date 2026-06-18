@@ -2,13 +2,9 @@ package models
 
 import (
 	"time"
-
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
-
-// 1. Core Application (Contains all the basic text data and loan terms)
-// 1. Core Application (Contains all the basic text data and loan terms)
 type LoanApplication struct {
     ID              uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
     UserID          uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
@@ -32,16 +28,14 @@ type LoanApplication struct {
     InterestRate    float64 `json:"interest_rate"`
     EstimatedEMI    float64 `json:"estimated_emi"`
 
-    // 👇 Mapped to "status" so React can read it easily!
     ApplicationStatus string `gorm:"type:varchar(20);default:'UNDER_REVIEW'" json:"status"`
 
-    // 👇 GORM MAGIC: These fields tell GORM to link the other two tables! 👇
     KYC           KYCDocuments     `gorm:"foreignKey:LoanID;constraint:OnDelete:CASCADE;" json:"kyc_documents"`
     FinancialDocs FinancialDetails `gorm:"foreignKey:LoanID;constraint:OnDelete:CASCADE;" json:"financial_details"`
 
     CreatedAt time.Time      `json:"created_at"`
     UpdatedAt time.Time      `json:"updated_at"`
-    DeletedAt gorm.DeletedAt `gorm:"index" json:"-"` // Hidden from frontend
+    DeletedAt gorm.DeletedAt `gorm:"index" json:"-"` 
 }
 
 // 2. KYC Table (Strictly Identity & Security)
@@ -64,25 +58,18 @@ type FinancialDetails struct {
 	PropertyAgreemntPath  string    `json:"property_agreemnt_path"`
 	IncomeProofPath       string    `json:"income_proof_path"`
 }
-
-// ==========================================
-// UUID Generation Hooks for all 3 tables
-// ==========================================
-
 func (l *LoanApplication) BeforeCreate(tx *gorm.DB) (err error) {
 	if l.ID == uuid.Nil {
 		l.ID = uuid.New()
 	}
 	return
 }
-
 func (k *KYCDocuments) BeforeCreate(tx *gorm.DB) (err error) {
 	if k.ID == uuid.Nil {
 		k.ID = uuid.New()
 	}
 	return
 }
-
 func (f *FinancialDetails) BeforeCreate(tx *gorm.DB) (err error) {
 	if f.ID == uuid.Nil {
 		f.ID = uuid.New()

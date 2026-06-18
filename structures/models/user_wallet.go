@@ -5,15 +5,13 @@ import (
 	"github.com/google/uuid"
 )
 
-// UserWallet holds the borrower's actual money
 type UserWallet struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	UserID    uuid.UUID `gorm:"type:uuid;uniqueIndex;not null" json:"user_id"` // Matches your user ID type
+	UserID    uuid.UUID `gorm:"type:uuid;uniqueIndex;not null" json:"user_id"` 
 	Balance   float64   `gorm:"type:numeric(15,2);not null;default:0.00" json:"balance"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// LedgerEntry is the permanent, immutable receipt
 type LedgerEntry struct {
 	ID              uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	WalletID        uuid.UUID `gorm:"type:uuid;index;not null" json:"wallet_id"` 

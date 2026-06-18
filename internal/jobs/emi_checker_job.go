@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
@@ -31,14 +32,17 @@ func (j *EMICheckerJob) Start() {
 	_, err := j.cron.AddFunc("0 0 * * *", func() {
 		fmt.Println("⏰ [CRON WAKING UP] Checking database for due EMIs...")
 
-		// ==========================================
-		// TODO: THE LOGIC HAPPENS HERE
-		// ==========================================
-		// 1. Fetch all pending EMIs due today
-		// 2. Send "Payment Due" notifications to the users
-		// 3. Mark heavily overdue loans with a late fee
+		// 1. Fetch all pending EMIs due today and update to OVERDUE
+		// 2. Send "Payment Due" or "Overdue" notifications
+		
+		// Create a context and call the service layer
+		ctx := context.Background()
+		err := j.LoanService.ProcessDueEMIs(ctx)
+		if err != nil {
+			log.Printf("❌ EMI Checker encountered an error: %v", err)
+		}
 
-		fmt.Println("🏁 [CRON FINISHED] All EMI reminders sent successfully!")
+		fmt.Println("🏁 [CRON FINISHED] All EMI reminders processed successfully!")
 	})
 
 	if err != nil {

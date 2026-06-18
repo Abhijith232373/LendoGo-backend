@@ -10,12 +10,17 @@ import (
 
 func Protected() fiber.Handler {
     return func(ctx *fiber.Ctx) error {
-        tokenString := ctx.Cookies("access_token")
+        var tokenString string
+
+        // 1. Prioritize the Authorization header (Bearer token)
+        authHeader := ctx.Get("Authorization")
+        if strings.HasPrefix(authHeader, "Bearer ") {
+            tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+        }
+
+        // 2. Fall back to the HTTP-Only cookie if no header is provided
         if tokenString == "" {
-            authHeader := ctx.Get("Authorization")
-            if strings.HasPrefix(authHeader, "Bearer ") {
-                tokenString = strings.TrimPrefix(authHeader, "Bearer ")
-            }
+            tokenString = ctx.Cookies("access_token")
         }
 
         if tokenString == "" {
@@ -40,7 +45,9 @@ func Protected() fiber.Handler {
 
         if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
             ctx.Locals("user_id", claims["user_id"])
+            ctx.Locals("name", claims["name"])
             ctx.Locals("role", claims["role"]) 
+            ctx.Locals("email", claims["email"])
             return ctx.Next()
         }
 

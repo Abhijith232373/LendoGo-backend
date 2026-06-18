@@ -36,7 +36,7 @@ func (r *userRepositoryImpl) CreateUser(user *models.User) error {
 func (r *userRepositoryImpl) FindByEmail(email string) (*models.User, error) {
 	var user models.User
 	// Fetch the first record that matches the email
-	err := r.db.Where("email = ?", email).First(&user).Error
+	err := r.db.Preload("Profile").Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}

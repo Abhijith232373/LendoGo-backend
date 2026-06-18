@@ -5,8 +5,7 @@ import (
 	"lendogo-backend/internal/repositories"
 	"lendogo-backend/structures/dto"
 	"lendogo-backend/structures/models"
-	"lendogo-backend/utils" // 👈 IMPORTANT: Import your utils package!
-
+	"lendogo-backend/utils" 
 	"github.com/google/uuid"
 )
 

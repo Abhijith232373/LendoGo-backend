@@ -1,7 +1,5 @@
 package dto
-// ==========================================
-// 3-Step OTP Registration Flow
-// ==========================================
+
 type SendOTPReq struct {
     FullName string `json:"fullName"`
     Email    string `json:"email"`
@@ -19,9 +17,6 @@ type SetPasswordReq struct {
     ConfirmPassword string `json:"confirmPassword"`
 }
 
-// ==========================================
-// Standard Auth Flow
-// ==========================================
 type RegisterReq struct {
     FullName string `json:"fullName"`
     Email    string `json:"email"`
@@ -33,11 +28,11 @@ type LoginReq struct {
     Password string `json:"password"`
 }
 
-// UserRes handles the JSON structure for the user in the response
 type UserRes struct {
-    ID          string          `json:"id"` // Changed to string for UUID compatibility
+    ID          string          `json:"id"` 
     FullName    string          `json:"full_name"`
     Email       string          `json:"email"`
+    Avatar      string          `json:"avatar,omitempty"`
     Role        string          `json:"role"` 
     Status      string          `json:"status"`
     Permissions map[string]bool `json:"permissions,omitempty"`

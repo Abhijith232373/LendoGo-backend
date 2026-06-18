@@ -28,21 +28,35 @@ func RequirePermission(requiredArea string) fiber.Handler {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Access Denied: Staff account not verified"})
 		}
 
-		// 4. Map snake_case from routes to Title Case UI names from the DB
+		// 4. Map granular route permissions to top-level UI areas from the DB
 		mappedArea := requiredArea
 		switch requiredArea {
-		case "user_management":
+		case "users.read", "users.create", "users.update", "users.delete", "user_management":
 			mappedArea = "User Management"
-		case "loan_applications":
+		case "loans.view", "loans.update", "loan_applications":
 			mappedArea = "Loan Applications"
-		case "customer_care":
+		case "consultation.view", "customer_care":
 			mappedArea = "Customer Care"
-		case "dashboard":
+		case "dashboard.view", "dashboard":
 			mappedArea = "Dashboard"
+		case "careers.view", "careers.create", "careers.update", "careers.delete":
+			mappedArea = "Careers"
+		case "kyc.view", "kyc.update":
+			mappedArea = "KYC Verifications"
+		case "blog.view", "blog.create", "blog.update", "blog.delete":
+			mappedArea = "Blog Management"
 		}
 
 		// 5. Check if the required permission toggle is set to TRUE
-		if hasAccess, exists := staff.Permissions[mappedArea]; !exists || !hasAccess {
+		// First check granular (e.g. "loans.view"), then fallback to top-level UI area
+		hasAccess := false
+		if val, exists := staff.Permissions[requiredArea]; exists && val {
+			hasAccess = true
+		} else if val, exists := staff.Permissions[mappedArea]; exists && val {
+			hasAccess = true
+		}
+
+		if !hasAccess {
 			// 🔒 KICK THEM OUT! They don't have the toggle enabled.
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 				"error": "Access Denied: Your role does not have clearance for the '" + mappedArea + "' module.",
